@@ -1,0 +1,4 @@
+# Raw/generated data
+raw/
+*.parquet
+*.csv
