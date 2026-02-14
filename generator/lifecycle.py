@@ -24,7 +24,6 @@ from .events import (
 
 fake = Faker()
 
-
 class UserLifecycle:
     """
     State machine for a single user.
@@ -34,6 +33,7 @@ class UserLifecycle:
         self.user_id = user_id
         self.country = country
         self.timezone_str = timezone_str
+        self.created_at = start_month  # Tracking creation for snapshot
 
         self.current_plan = "Trial"
         self.status = "Active"
@@ -150,6 +150,7 @@ class UserLifecycle:
 
         # --- TRIAL LOGIC ---
         if self.current_plan == "Trial":
+            # Simulate trial ending this month
             if np.random.rand() < TRIAL_CONVERT_PROB:
                 self.current_plan = "Pro"
                 self._add_subscription_event(
@@ -168,12 +169,19 @@ class UserLifecycle:
                 return
 
         # --- PAYMENT LOGIC ---
-        if self.current_plan in PLANS:
-            amount = PLAN_PRICES[self.current_plan]
-            success = self._add_payment(current_month, amount)
-
-            if not success:
-                return
+        if self.current_plan in PLANS and self.current_plan != "Free":
+            amount = PLAN_PRICES.get(self.current_plan, 0)
+            if amount > 0:
+                success = self._add_payment(current_month, amount)
+                if not success:
+                    # Payment failed, skip usage for this simulation tick if strictly blocked?
+                    # Contract says: fail + retry + auto cancel. 
+                    # We let it slide here until 3x fails trigger cancel.
+                    pass
+        
+        # If user was canceled by payment logic above, stop.
+        if self.status != "Active":
+            return
 
         # --- RANDOM CHURN ---
         if np.random.rand() < CHURN_PROB:
@@ -190,8 +198,9 @@ class UserLifecycle:
         self._maybe_upgrade_or_downgrade(current_month)
 
         # --- PRODUCT USAGE ---
-        if self.current_plan in PLANS:
-            limit = EVENT_LIMITS[self.current_plan]
+        # Allow usage if active (even if payment failed this month, usually grace period exists)
+        if self.current_plan in PLANS or self.current_plan == "Trial":
+            limit = EVENT_LIMITS.get(self.current_plan, 0)
             usage_events = generate_product_events(
                 self.user_id,
                 self.current_plan,
@@ -221,11 +230,31 @@ def generate_user_lifecycle(n_users: int, start_month: pd.Timestamp = START_MONT
     Generate list of UserLifecycle instances with initial country & timezone assigned.
     """
     users = []
-
     for _ in range(n_users):
         user_id = fake.uuid4()
         country, timezone = assign_country_timezone()
         user = UserLifecycle(user_id, country, timezone, start_month)
         users.append(user)
-
     return users
+
+def generate_users_snapshot(users):
+    """
+    Generate a snapshot of users for the dimension table.
+    """
+    snapshot = []
+    for user in users:
+        # Create a rough UTC created_at based on their start month
+        created_at_utc = local_to_utc(
+            random_timestamp_in_month(user.created_at), 
+            user.timezone_str
+        )
+        
+        snapshot.append({
+            "user_id": user.user_id,
+            "country": user.country,
+            "timezone": user.timezone_str,
+            "current_status": user.status,
+            "current_plan": user.current_plan,
+            "created_at_utc": created_at_utc
+        })
+    return snapshot

@@ -1,69 +1,53 @@
 import pandas as pd
 
 # =========================================================
-# GLOBAL SIMULATION WINDOW
+# GLOBAL SETTINGS
 # =========================================================
-
-START_MONTH = pd.to_datetime("2024-01-01")
-END_MONTH = pd.to_datetime("2025-12-01")  # 24 months inclusive
-
-MONTH_RANGE = pd.date_range(
-    START_MONTH,
-    END_MONTH,
-    freq="MS"  # Month Start
-)
-
-# =========================================================
-# RANDOM SEED (Deterministic Simulation)
-# =========================================================
-
 RANDOM_SEED = 42
+START_MONTH = pd.Timestamp("2024-01-01")
+END_MONTH = pd.Timestamp("2024-12-01")
+MONTH_RANGE = pd.date_range(start=START_MONTH, end=END_MONTH, freq="MS")
+
+INITIAL_USERS = 500
+MIN_NEW_USERS = 50
+MAX_NEW_USERS = 100
 
 # =========================================================
-# USER GROWTH RULES
+# PRICING & LIMITS
 # =========================================================
-
-INITIAL_USERS = 5000
-MIN_NEW_USERS = 300
-MAX_NEW_USERS = 800
-
-# =========================================================
-# PLANS & PRICING
-# =========================================================
-
 PLANS = ["Free", "Pro", "Business"]
 
 PLAN_PRICES = {
     "Free": 0,
     "Pro": 15,
     "Business": 50,
+    "Trial": 0,
+    "Expired": 0,
+    "Canceled": 0
 }
-
-# =========================================================
-# PRODUCT USAGE LIMITS (Per Month)
-# =========================================================
 
 EVENT_LIMITS = {
     "Free": 10,
     "Pro": 100,
     "Business": 300,
+    "Trial": 50, # Trial users get some usage
+    "Pro Plus": 100 # For Chaos Month 6
 }
 
 # =========================================================
 # PROBABILITIES (STATE MACHINE)
 # =========================================================
-
 TRIAL_CONVERT_PROB = 0.4
 CHURN_PROB = 0.05
 UPGRADE_PROB = 0.10
 DOWNGRADE_PROB = 0.05
 PAYMENT_FAIL_PROB = 0.05
 LATE_ARRIVING_PROB = 0.03
+REACTIVATION_PROB = 0.08
 
 # =========================================================
-# TIMEZONE DISTRIBUTION (Multi-Region Simulation)
+# TIMEZONE DISTRIBUTION
 # =========================================================
-
 COUNTRY_TIMEZONE_MAP = {
     "US": "America/New_York",
     "UK": "Europe/London",
@@ -76,39 +60,28 @@ COUNTRY_TIMEZONE_MAP = {
 COUNTRIES = list(COUNTRY_TIMEZONE_MAP.keys())
 
 # =========================================================
-# CHAOS INJECTION SCHEDULE (Month Index Based)
-# Month index starts from 1
+# CHAOS INJECTION SCHEDULE (CONTRACT LOCKED)
 # =========================================================
-
 CHAOS_EVENTS = {
-    6: "rename_plan",
-    8: "add_column",
-    10: "duplicate_payments",
-    12: "datatype_change",
+    6: "rename_plan",       # Month 6
+    8: "add_column",        # Month 8
+    10: "duplicate_payments", # Month 10
+    12: "datatype_change",  # Month 12
 }
 
 # =========================================================
 # OUTPUT CONFIG
 # =========================================================
-
 BASE_OUTPUT_PATH = "raw"
 
-SUBSCRIPTION_PATH = f"{BASE_OUTPUT_PATH}/user_lifecycle"
+SUBSCRIPTION_PATH = f"{BASE_OUTPUT_PATH}/subscription_events"
 PAYMENTS_PATH = f"{BASE_OUTPUT_PATH}/payments"
 PRODUCT_EVENTS_PATH = f"{BASE_OUTPUT_PATH}/product_events"
 USERS_PATH = f"{BASE_OUTPUT_PATH}/users"
 
 # =========================================================
-# HELPER: GET MONTH INDEX
+# HELPER
 # =========================================================
-
-
 def get_month_index(current_month: pd.Timestamp) -> int:
-    """
-    Returns month index starting from 1.
-    Example:
-        2024-01 -> 1
-        2024-02 -> 2
-    """
     return (current_month.year - START_MONTH.year) * 12 + \
            (current_month.month - START_MONTH.month) + 1

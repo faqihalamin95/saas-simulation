@@ -1,20 +1,16 @@
 import copy
 import random
-from datetime import timedelta
-
 import pandas as pd
 
-from .config import CHAOS_EVENTS, get_month_index
+from .config import CHAOS_EVENTS, LATE_ARRIVING_PROB, get_month_index
 
 DUPLICATE_RATE = 0.02
-LATE_EVENT_RATE = 0.05
-NULL_FIELD_RATE = 0.01
-TIME_SHIFT_RATE = 0.03
+LATE_EVENT_RATE = LATE_ARRIVING_PROB
 
-
-def inject_late_events(events, ts_field="event_timestamp_local"):
+def inject_late_events(events, ts_field="event_timestamp_utc"):
     """
-    Shift events 1 month forward to simulate late-arriving data.
+    Shift a portion of events 1 month forward to simulate late-arriving data.
+    (Contract: Late arriving - 1 mechanism only)
     """
     if not events:
         return events
@@ -26,71 +22,51 @@ def inject_late_events(events, ts_field="event_timestamp_local"):
     idxs = random.sample(range(len(events)), n)
     for i in idxs:
         events[i][ts_field] = events[i][ts_field] + pd.DateOffset(months=1)
-    return events
 
+    return events
 
 def inject_duplicates(events: list, duplicate_rate: float = DUPLICATE_RATE) -> list:
+    """
+    Simulate duplicate data spike.
+    (Contract: 1 duplicate spike)
+    """
     duplicated = []
-
     for event in events:
         duplicated.append(event)
-
         if random.random() < duplicate_rate:
             duplicated.append(copy.deepcopy(event))
-
     return duplicated
 
-
-def inject_time_shift(events, ts_field="event_timestamp_local"):
+def apply_chaos(events, current_month, dataset_name, ts_field="event_timestamp_utc"):
     """
-    Randomly shift events by ±12 hours to simulate time jitter.
-    """
-    if not events:
-        return events
-
-    n = int(len(events) * TIME_SHIFT_RATE)
-    if n == 0:
-        return events
-
-    idxs = random.sample(range(len(events)), n)
-
-    for i in idxs:
-        events[i][ts_field] = events[i][ts_field] + timedelta(hours=random.randint(-12, 12))
-    return events
-
-
-def inject_null_fields(events: list) -> list:
-    for event in events:
-        if random.random() < NULL_FIELD_RATE:
-            random_key = random.choice(list(event.keys()))
-            event[random_key] = None
-    return events
-
-
-def apply_chaos(events, current_month, dataset_name, ts_field="event_timestamp_local"):
-    """
-    Apply default chaos every month + scheduled monthly chaos from config.
+    Apply monthly chaos scenarios from blueprint.
     """
     if not events:
         return events
 
+    # 1. Late Arriving (Always active mechanism)
     events = inject_late_events(events, ts_field=ts_field)
-    events = inject_time_shift(events, ts_field=ts_field)
 
+    # Check Scheduled Chaos
     chaos_name = CHAOS_EVENTS.get(get_month_index(current_month))
 
+    # 2. Plan Rename (Month 6)
     if chaos_name == "rename_plan":
         for event in events:
             if "plan" in event and event["plan"] == "Pro":
                 event["plan"] = "Pro Plus"
 
+    # 3. Schema Change (Month 8 - Add Column)
     elif chaos_name == "add_column":
         for event in events:
             event["ingestion_source"] = "simulator_v2"
+            event["promo_code"] = "Q3_LAUNCH"
 
+    # 4. Duplicate Spike (Month 10)
     elif chaos_name == "duplicate_payments" and dataset_name == "payments":
         events = inject_duplicates(events)
 
+    # 5. Datatype Change (Month 12)
     elif chaos_name == "datatype_change" and dataset_name == "payments":
         for event in events:
             if "amount_usd" in event and event["amount_usd"] is not None:

@@ -1,62 +1,43 @@
 import numpy as np
 import pandas as pd
-import pytz
-from datetime import timedelta
 from faker import Faker
-
-from .config import COUNTRY_TIMEZONE_MAP
+from .config import COUNTRIES, COUNTRY_TIMEZONE_MAP
 
 fake = Faker()
 
-
-# =========================================================
-# RANDOM TIMESTAMP GENERATOR (LOCAL TIME)
-# =========================================================
-
-def random_timestamp_in_month(current_month: pd.Timestamp) -> pd.Timestamp:
+def random_timestamp_in_month(month_start: pd.Timestamp) -> pd.Timestamp:
     """
-    Generate random timestamp within given month (local naive).
+    Generate a random timestamp within the given month.
     """
-    start = current_month
-    end = (current_month + pd.offsets.MonthEnd(1))
-
-    random_days = np.random.randint(0, (end - start).days + 1)
-    random_seconds = np.random.randint(0, 24 * 60 * 60)
-
-    ts = start + timedelta(days=random_days, seconds=random_seconds)
-    return ts
-
-
-# =========================================================
-# TIMEZONE ASSIGNMENT
-# =========================================================
-
-def assign_country_timezone():
-    """
-    Randomly assign country and timezone.
-    """
-    country = np.random.choice(list(COUNTRY_TIMEZONE_MAP.keys()))
-    timezone_str = COUNTRY_TIMEZONE_MAP[country]
-    return country, timezone_str
-
-
-# =========================================================
-# LOCAL → UTC CONVERSION
-# =========================================================
+    start_ts = month_start.timestamp()
+    # End of month roughly (start of next month - 1 second)
+    end_ts = (month_start + pd.DateOffset(months=1)).timestamp() - 1
+    random_ts = np.random.randint(start_ts, end_ts)
+    return pd.to_datetime(random_ts, unit='s')
 
 def local_to_utc(local_ts: pd.Timestamp, timezone_str: str) -> pd.Timestamp:
     """
-    Convert naive local timestamp to UTC.
+    Convert local timestamp to UTC, handling DST gaps and ambiguities.
     """
-    tz = pytz.timezone(timezone_str)
-    localized = tz.localize(local_ts)
-    utc_ts = localized.astimezone(pytz.utc)
-    return utc_ts
-
-
-# =========================================================
-# GENERATE PRODUCT USAGE EVENTS
-# =========================================================
+    try:
+        # 'nonexistent' akan menggeser waktu yang tidak ada akibat DST shift
+        # 'ambiguous' akan menangani waktu yang muncul 2x saat jam mundur
+        return local_ts.tz_localize(
+            timezone_str, 
+            nonexistent='shift_forward', 
+            ambiguous='infer'
+        ).tz_convert("UTC").tz_localize(None)
+    except Exception:
+        # Fallback sederhana jika terjadi error tak terduga
+        return local_ts.tz_localize("UTC").tz_localize(None)
+        
+def assign_country_timezone():
+    """
+    Randomly assign a country and its corresponding timezone.
+    """
+    country = np.random.choice(COUNTRIES)
+    timezone = COUNTRY_TIMEZONE_MAP[country]
+    return country, timezone
 
 def generate_product_events(
     user_id: str,
@@ -67,11 +48,11 @@ def generate_product_events(
 ):
     """
     Generate product usage events for a user in a given month.
-    Returns list of dictionaries.
     """
+    if event_limit <= 0:
+        return []
 
     usage_count = np.random.randint(1, event_limit + 1)
-
     events = []
 
     for _ in range(usage_count):
@@ -90,16 +71,10 @@ def generate_product_events(
 
     return events
 
-
-# =========================================================
-# GENERATE PAYMENT TIMESTAMP
-# =========================================================
-
 def generate_payment_timestamp(current_month: pd.Timestamp, timezone_str: str):
     """
     Generate payment timestamp (local + utc).
     """
     local_ts = random_timestamp_in_month(current_month)
     utc_ts = local_to_utc(local_ts, timezone_str)
-
     return local_ts, utc_ts

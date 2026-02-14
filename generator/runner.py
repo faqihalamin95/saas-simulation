@@ -1,5 +1,4 @@
 import numpy as np
-
 from .chaos import apply_chaos
 from .config import (
     INITIAL_USERS,
@@ -8,26 +7,32 @@ from .config import (
     MONTH_RANGE,
     RANDOM_SEED,
 )
-from .lifecycle import generate_user_lifecycle
+from .lifecycle import generate_user_lifecycle, generate_users_snapshot
 from .writer import write_parquet
-
 
 def run_pipeline():
     np.random.seed(RANDOM_SEED)
 
     print(f"Generating initial users: {INITIAL_USERS}")
+    # Batch awal pengguna
     users = generate_user_lifecycle(INITIAL_USERS, start_month=MONTH_RANGE[0])
 
+    # Container global (optional, tapi di sini kita tulis per batch untuk hemat memori)
+    # Tapi untuk final write, kita kumpulkan dulu atau write incremental.
+    # Kode ini menggunakan strategi kumpulkan semua lalu write (sesuai kode sebelumnya).
     all_subs, all_pays, all_prods = [], [], []
 
     for idx, current_month in enumerate(MONTH_RANGE):
+        # 1. Tambah user baru (kecuali bulan pertama)
         if idx > 0:
-            new_users = int(np.random.randint(MIN_NEW_USERS, MAX_NEW_USERS + 1))
-            users.extend(generate_user_lifecycle(new_users, start_month=current_month))
-            print(f"[{current_month.strftime('%Y-%m')}] Added new users: {new_users}")
+            new_users_count = int(np.random.randint(MIN_NEW_USERS, MAX_NEW_USERS + 1))
+            new_users = generate_user_lifecycle(new_users_count, start_month=current_month)
+            users.extend(new_users)
+            print(f"[{current_month.strftime('%Y-%m')}] Added new users: {new_users_count}")
 
         month_subs, month_pays, month_prods = [], [], []
 
+        # 2. Proses setiap user
         for user in users:
             user.process_month(current_month)
             subs, pays, prods = user.collect_and_reset_monthly_events()
@@ -35,25 +40,29 @@ def run_pipeline():
             month_pays.extend(pays)
             month_prods.extend(prods)
 
+        # 3. Apply Chaos (Strict Contract)
         month_subs = apply_chaos(
             month_subs,
             current_month=current_month,
-            dataset_name="user_lifecycle",
-            ts_field="event_timestamp_local",
+            dataset_name="subscription_events",
+            ts_field="event_timestamp_utc",
         )
+        
         month_prods = apply_chaos(
             month_prods,
             current_month=current_month,
             dataset_name="product_events",
-            ts_field="event_timestamp_local",
+            ts_field="event_timestamp_utc",
         )
+        
         month_pays = apply_chaos(
             month_pays,
             current_month=current_month,
             dataset_name="payments",
-            ts_field="payment_timestamp_local",
+            ts_field="payment_timestamp_utc",
         )
 
+        # 4. Collect
         all_subs.extend(month_subs)
         all_pays.extend(month_pays)
         all_prods.extend(month_prods)
@@ -63,12 +72,16 @@ def run_pipeline():
             f"subs: {len(month_subs)}, pays: {len(month_pays)}, prods: {len(month_prods)}"
         )
 
-    write_parquet(all_subs, "user_lifecycle")
-    write_parquet(all_prods, "product_events")
-    write_parquet(all_pays, "payments", ts_field="payment_timestamp_local")
+    # 5. Write All Data
+    print("Writing data to parquet...")
+    write_parquet(all_subs, "subscription_events", ts_field="event_timestamp_utc")
+    write_parquet(all_prods, "product_events", ts_field="event_timestamp_utc")
+    write_parquet(all_pays, "payments", ts_field="payment_timestamp_utc")
+    
+    # 6. Snapshot Users
+    write_parquet(generate_users_snapshot(users), "users", ts_field="created_at_utc")
 
-    print("Done.")
-
+    print("Pipeline Done.")
 
 if __name__ == "__main__":
     run_pipeline()
