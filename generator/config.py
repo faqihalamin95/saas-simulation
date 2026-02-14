@@ -1,4 +1,3 @@
-from datetime import datetime
 import pandas as pd
 
 # =========================================================
@@ -94,7 +93,7 @@ CHAOS_EVENTS = {
 
 BASE_OUTPUT_PATH = "raw"
 
-SUBSCRIPTION_PATH = f"{BASE_OUTPUT_PATH}/subscription_events"
+SUBSCRIPTION_PATH = f"{BASE_OUTPUT_PATH}/user_lifecycle"
 PAYMENTS_PATH = f"{BASE_OUTPUT_PATH}/payments"
 PRODUCT_EVENTS_PATH = f"{BASE_OUTPUT_PATH}/product_events"
 USERS_PATH = f"{BASE_OUTPUT_PATH}/users"
@@ -102,6 +101,7 @@ USERS_PATH = f"{BASE_OUTPUT_PATH}/users"
 # =========================================================
 # HELPER: GET MONTH INDEX
 # =========================================================
+
 
 def get_month_index(current_month: pd.Timestamp) -> int:
     """

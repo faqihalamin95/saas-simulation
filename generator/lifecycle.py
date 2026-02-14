@@ -1,6 +1,6 @@
 import numpy as np
 from faker import Faker
-from datetime import datetime
+import pandas as pd
 
 from .config import (
     PLANS,
@@ -216,7 +216,7 @@ class UserLifecycle:
 
         return subs, pays, prods
 
-def generate_user_lifecycle(n_users: int, start_month: datetime = START_MONTH):
+def generate_user_lifecycle(n_users: int, start_month: pd.Timestamp = START_MONTH):
     """
     Generate list of UserLifecycle instances with initial country & timezone assigned.
     """

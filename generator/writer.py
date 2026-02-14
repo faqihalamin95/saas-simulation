@@ -1,8 +1,9 @@
 import os
-import pandas as pd
 from datetime import datetime
 
-RAW_BASE_PATH = "../raw"
+import pandas as pd
+
+from .config import BASE_OUTPUT_PATH
 
 
 def ensure_directory(path: str):
@@ -24,16 +25,13 @@ def write_parquet(events: list, dataset_name: str, ts_field="event_timestamp_loc
     if ts_field not in df.columns:
         raise ValueError(f"{ts_field} column is required in the events")
 
-    # Convert to datetime if not already
     df[ts_field] = pd.to_datetime(df[ts_field])
-
-    # Use date partition based on ts_field
     df["event_date"] = df[ts_field].dt.date
 
     for event_date, group in df.groupby("event_date"):
 
         partition_path = os.path.join(
-            RAW_BASE_PATH,
+            BASE_OUTPUT_PATH,
             dataset_name,
             f"event_date={event_date}"
         )
@@ -43,7 +41,6 @@ def write_parquet(events: list, dataset_name: str, ts_field="event_timestamp_loc
         file_name = f"{dataset_name}_{int(datetime.utcnow().timestamp())}.parquet"
         full_path = os.path.join(partition_path, file_name)
 
-        # Drop the temporary partition column before writing
         group.drop(columns=["event_date"]).to_parquet(
             full_path,
             index=False,
