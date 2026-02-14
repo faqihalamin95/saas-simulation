@@ -82,6 +82,7 @@ def generate_product_events(
             "event_id": fake.uuid4(),
             "user_id": user_id,
             "event_type": "product_usage",
+            "plan": plan,
             "event_timestamp_local": local_ts,
             "event_timestamp_utc": utc_ts,
             "batch_month": current_month.strftime("%Y-%m"),

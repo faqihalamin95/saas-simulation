@@ -1,5 +1,5 @@
-import pandas as pd
 import random
+import pandas as pd
 from datetime import timedelta
 import copy
 
@@ -13,7 +13,13 @@ def inject_late_events(events, ts_field="event_timestamp_local"):
     """
     Shift ~3% events 1 bulan ke depan untuk mensimulasikan late-arriving data.
     """
-    n = max(1, int(len(events) * 0.03))
+    if not events:
+        return events
+
+    n = int(len(events) * LATE_EVENT_RATE)
+    if n == 0:
+        return events
+
     idxs = random.sample(range(len(events)), n)
     for i in idxs:
         events[i][ts_field] = events[i][ts_field] + pd.DateOffset(months=1)
@@ -35,12 +41,17 @@ def inject_time_shift(events, ts_field="event_timestamp_local"):
     """
     Randomly shift ~3% events by ±12 hours to simulate time jitter.
     """
-    n = max(1, int(len(events) * 0.03))
+    if not events:
+        return events
+
+    n = int(len(events) * TIME_SHIFT_RATE)
+    if n == 0:
+        return events
+
     idxs = random.sample(range(len(events)), n)
 
     for i in idxs:
         events[i][ts_field] = events[i][ts_field] + timedelta(hours=random.randint(-12, 12))
-
     return events
 
 
@@ -50,22 +61,6 @@ def inject_null_fields(events: list) -> list:
             random_key = random.choice(list(event.keys()))
             event[random_key] = None
     return events
-
-
-def inject_time_shift(events, ts_field="event_timestamp_local"):
-    """
-    Shift ~3% events ±12 jam untuk mensimulasikan jitter.
-    """
-    import random
-    from datetime import timedelta
-
-    n = max(1, int(len(events) * 0.03))
-    idxs = random.sample(range(len(events)), n)
-    for i in idxs:
-        events[i][ts_field] = events[i][ts_field] + timedelta(hours=random.randint(-12, 12))
-    return events
-
-
 
 def apply_chaos(events):
     """
