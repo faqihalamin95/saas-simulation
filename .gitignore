@@ -6,3 +6,7 @@ raw/
 # Python cache
 __pycache__/
 *.pyc
+
+# Python virtual environment
+venv/
+.env/
