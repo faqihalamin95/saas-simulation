@@ -4,7 +4,6 @@ data/
 *.csv
 
 # Python cache
-01-local-stack/__pycache__/
 *.pyc
 
 # Python virtual environment
