@@ -7,11 +7,14 @@ fake = Faker()
 
 def random_timestamp_in_month(month_start: pd.Timestamp) -> pd.Timestamp:
     """
-    Generate a random timestamp within the given month.
+    Calculates a random point in time within a specific month.
+    Converts timestamps to Unix integers to allow random integer sampling.
     """
     start_ts = month_start.timestamp()
-    # End of month roughly (start of next month - 1 second)
+    # Find the boundary: start of the next month minus 1 second
     end_ts = (month_start + pd.DateOffset(months=1)).timestamp() - 1
+    
+    # Generate a random uniform integer between start and end
     random_ts = np.random.randint(start_ts, end_ts)
     return pd.to_datetime(random_ts, unit='s')
 
@@ -20,15 +23,13 @@ def local_to_utc(local_ts: pd.Timestamp, timezone_str: str) -> pd.Timestamp:
     Convert local timestamp to UTC, handling DST gaps and ambiguities.
     """
     try:
-        # 'nonexistent' akan menggeser waktu yang tidak ada akibat DST shift
-        # 'ambiguous' akan menangani waktu yang muncul 2x saat jam mundur
         return local_ts.tz_localize(
             timezone_str, 
-            nonexistent='shift_forward', 
-            ambiguous='infer'
-        ).tz_convert("UTC").tz_localize(None)
+            nonexistent='shift_forward', # Fixes gaps caused by DST 'Spring Forward'
+            ambiguous='infer' # Fixes overlaps during DST 'Fall Back'
+        ).tz_convert("UTC").tz_localize(None) # Convert to UTC and remove offset info
     except Exception:
-        # Fallback sederhana jika terjadi error tak terduga
+        # Emergency fallback if localization fails
         return local_ts.tz_localize("UTC").tz_localize(None)
         
 def assign_country_timezone():
@@ -52,6 +53,7 @@ def generate_product_events(
     if event_limit <= 0:
         return []
 
+    # Randomize usage volume to make the data look realistic (not everyone uses it the same)
     usage_count = np.random.randint(1, event_limit + 1)
     events = []
 

@@ -26,12 +26,9 @@ def write_parquet(events: list, dataset_name: str, ts_field="event_timestamp_loc
     df[ts_field] = pd.to_datetime(df[ts_field])
     df["event_date"] = df[ts_field].dt.date
 
-    # --- FIX UNTUK DATATYPE CHANGE CHAOS ---
-    # Jika dataset adalah payments, paksa amount_usd jadi string 
-    # agar pyarrow tidak protes saat ada campuran float & string
+    # Handle Chaos Scenarios with Mixed Datatypes
     if dataset_name == "payments" and "amount_usd" in df.columns:
         df["amount_usd"] = df["amount_usd"].astype(str)
-    # ---------------------------------------
 
     for event_date, group in df.groupby("event_date"):
         partition_path = os.path.join(

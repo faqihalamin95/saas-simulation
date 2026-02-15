@@ -14,17 +14,15 @@ def run_pipeline():
     np.random.seed(RANDOM_SEED)
 
     print(f"Generating initial users: {INITIAL_USERS}")
-    # Batch awal pengguna
+    # Generate initial users at the start of the first month
     users = generate_user_lifecycle(INITIAL_USERS, start_month=MONTH_RANGE[0])
 
-    # Container global (optional, tapi di sini kita tulis per batch untuk hemat memori)
-    # Tapi untuk final write, kita kumpulkan dulu atau write incremental.
-    # Kode ini menggunakan strategi kumpulkan semua lalu write (sesuai kode sebelumnya).
+    # Global lists to collect all events across months before writing.
+    # For this example, we will collect all events in memory and write at the end.
     all_subs, all_pays, all_prods = [], [], []
 
     for idx, current_month in enumerate(MONTH_RANGE):
-        # 1. Tambah user baru (kecuali bulan pertama)
-        if idx > 0:
+        # 1. Add New Users Monthly (Simulate Growth), except for the first month.
             new_users_count = int(np.random.randint(MIN_NEW_USERS, MAX_NEW_USERS + 1))
             new_users = generate_user_lifecycle(new_users_count, start_month=current_month)
             users.extend(new_users)
@@ -32,7 +30,7 @@ def run_pipeline():
 
         month_subs, month_pays, month_prods = [], [], []
 
-        # 2. Proses setiap user
+        # 2. Process Monthly Lifecycle for Each User
         for user in users:
             user.process_month(current_month)
             subs, pays, prods = user.collect_and_reset_monthly_events()
