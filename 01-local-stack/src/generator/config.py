@@ -12,6 +12,15 @@ INITIAL_USERS = 500
 MIN_NEW_USERS = 50
 MAX_NEW_USERS = 100
 
+COUNTRY_FAKER_LOCALE = {
+    "US": "en_US",
+    "UK": "en_GB",
+    "DE": "de_DE",
+    "IN": "hi_IN",
+    "JP": "ja_JP",
+    "BR": "pt_BR",
+}
+
 # =========================================================
 # PRICING & LIMITS
 # =========================================================
@@ -33,6 +42,14 @@ EVENT_LIMITS = {
     "Trial": 50, # Trial users get some usage
     "Pro Plus": 100 # For Chaos Month 6
 }
+
+# =========================================================
+# ACQUISITION CHANNELS
+# =========================================================
+
+ACQUISITION_CHANNELS = ["organic", "paid_ads", "referral", "email_campaign"]
+
+ACQUISITION_CHANNEL_WEIGHTS = [0.35, 0.40, 0.15, 0.10]  # organic, paid_ads, referral, email_campaign
 
 # =========================================================
 # PROBABILITIES (STATE MACHINE)
@@ -72,7 +89,7 @@ CHAOS_EVENTS = {
 # =========================================================
 # OUTPUT CONFIG
 # =========================================================
-BASE_OUTPUT_PATH = "01-local-stack/data/raw"
+BASE_OUTPUT_PATH = "data/raw"
 
 SUBSCRIPTION_PATH = f"{BASE_OUTPUT_PATH}/subscription_events"
 PAYMENTS_PATH = f"{BASE_OUTPUT_PATH}/payments"

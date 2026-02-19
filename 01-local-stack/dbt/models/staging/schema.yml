@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: stg_users
+    description: "Staging layer for users - cleaned and type-casted"
+    columns:
+      - name: user_id
+        description: "Unique user identifier"
+        tests:
+          - unique
+          - not_null
+      
+      - name: email
+        description: "User email address"
+        tests:
+          - unique
+          - not_null
+      
+      - name: acquisition_channel
+        description: "Channel where user was acquired"
+        tests:
+          - accepted_values:
+              values: ['organic', 'paid_ads', 'referral', 'email_campaign']
+
+  - name: stg_payments
+    description: "Staging layer for payments - deduplicated and amount cast to numeric"
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: user_id
+        tests:
+          - not_null
+      
+      - name: amount_usd
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['success', 'failed']
+
+  - name: stg_subscription_events
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: user_id
+        tests:
+          - not_null
+      
+      - name: event_type
+        tests:
+          - accepted_values:
+              values: ['trial_start', 'trial_convert', 'trial_expire', 'upgrade', 'downgrade', 'cancel', 'reactivate']
+      
+      - name: plan
+        tests:
+          - accepted_values:
+              values: ['Trial', 'Free', 'Pro', 'Pro Plus', 'Business', 'Expired', 'Canceled']
+
+  - name: stg_product_events
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: user_id
+        tests:
+          - not_null
+      
+      - name: plan
+        tests:
+          - accepted_values:
+              values: ['Trial', 'Free', 'Pro', 'Pro Plus', 'Business']

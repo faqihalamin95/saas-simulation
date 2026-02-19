@@ -1,3 +1,4 @@
+import locale
 import numpy as np
 from faker import Faker
 import pandas as pd
@@ -12,6 +13,10 @@ from .config import (
     DOWNGRADE_PROB,
     PAYMENT_FAIL_PROB,
     START_MONTH,
+    REACTIVATION_PROB,
+    COUNTRY_FAKER_LOCALE, 
+    ACQUISITION_CHANNELS, 
+    ACQUISITION_CHANNEL_WEIGHTS,
 )
 
 from .events import (
@@ -49,6 +54,18 @@ class UserLifecycle:
             event_type="trial_start",
             plan="Trial",
             current_month=start_month
+        )
+
+        # Personalize name/email based on country for more realism
+        locale = COUNTRY_FAKER_LOCALE.get(country, "en_US")
+        fake_local = Faker(locale)
+        self.name = fake_local.name()
+        self.email = f"{Faker('en_US').user_name()}_{self.user_id[:8]}@{Faker('en_US').free_email_domain()}"
+
+        # Assign acquisition channel based on weighted probabilities
+        self.acquisition_channel = np.random.choice(
+            ACQUISITION_CHANNELS, 
+            p=ACQUISITION_CHANNEL_WEIGHTS
         )
 
     # =========================================================
@@ -145,7 +162,9 @@ class UserLifecycle:
         Main monthly state transition.
         """
 
+        # chance to reactivate if churned
         if self.status != "Active":
+            self._maybe_reactivate(current_month)
             return
 
         # --- TRIAL LOGIC ---
@@ -224,6 +243,27 @@ class UserLifecycle:
         self.product_events = []
 
         return subs, pays, prods
+    
+    def _maybe_reactivate(self, current_month):
+        """
+        Gives churned users a chance to come back.
+        Only users who explicitly canceled (not expired trials) can reactivate.
+        They restart on the Free plan.
+        """
+        if self.status != "Churned":
+            return
+        if self.current_plan != "Canceled":
+            return  # Expired trial tidak bisa reaktivasi
+
+        if np.random.rand() < REACTIVATION_PROB:
+            self.status = "Active"
+            self.current_plan = "Free"
+            self.failed_payments = 0  # Reset payment failure counter
+            self._add_subscription_event(
+                event_type="reactivate",
+                plan="Free",
+                current_month=current_month
+            )
 
 def generate_user_lifecycle(n_users: int, start_month: pd.Timestamp = START_MONTH):
     """
@@ -251,6 +291,9 @@ def generate_users_snapshot(users):
         
         snapshot.append({
             "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "acquisition_channel": user.acquisition_channel,
             "country": user.country,
             "timezone": user.timezone_str,
             "current_status": user.status,

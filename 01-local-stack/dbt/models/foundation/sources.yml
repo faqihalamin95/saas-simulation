@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: staging
+    schema: staging
+    tables:
+      - name: stg_users
+      - name: stg_subscription_events
+      - name: stg_payments
+      - name: stg_product_events

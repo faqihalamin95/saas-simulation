@@ -11,44 +11,60 @@ def inject_late_events(events, ts_field="event_timestamp_utc"):
     """
     Simulates data arriving later than the actual event time.
     Shifts a random subset of events 1 month into the future.
+    
+    Returns a NEW list without modifying the original.
     """
     if not events:
-        return events
+        return []
 
+    # Create a deep copy to avoid mutating the original
+    events_copy = copy.deepcopy(events)
+    
     # Determine how many records will be delayed
-    n = int(len(events) * LATE_EVENT_RATE)
+    n = int(len(events_copy) * LATE_EVENT_RATE)
     if n == 0:
-        return events
+        return events_copy
 
     # Select random indices and apply the 1-month offset
-    idxs = random.sample(range(len(events)), n)
+    idxs = random.sample(range(len(events_copy)), n)
     for i in idxs:
-        # pd.DateOffset is used here to cleanly handle calendar months
-        events[i][ts_field] = events[i][ts_field] + pd.DateOffset(months=1)
+        events_copy[i][ts_field] = events_copy[i][ts_field] + pd.DateOffset(months=1)
 
-    return events
+    return events_copy
+
 
 def inject_duplicates(events: list, duplicate_rate: float = DUPLICATE_RATE) -> list:
     """
     Simulates a duplication bug (e.g., a retry logic error or upstream glitch).
-    Uses deepcopy to ensure the duplicated object is independent.
+    Returns a NEW list with duplicated records.
     """
+    if not events:
+        return []
+    
     duplicated = []
     for event in events:
-        duplicated.append(event)
+        # Always include the original
+        duplicated.append(copy.deepcopy(event))
         # Randomly decide if this specific record should be duplicated
         if random.random() < duplicate_rate:
             duplicated.append(copy.deepcopy(event))
+    
     return duplicated
+
 
 def apply_chaos(events, current_month, dataset_name, ts_field="event_timestamp_utc"):
     """
     The main orchestrator that decides which 'Chaos Scenario' to trigger
     based on the current month in the simulation timeline.
+    
+    Returns a NEW list with chaos applied.
     """
     if not events:
-        return events
+        return []
 
+    # Work on a copy to maintain immutability
+    events = copy.deepcopy(events)
+    
     # 1. LATENCY (Always On): Randomly delays a small % of data every month.
     events = inject_late_events(events, ts_field=ts_field)
 

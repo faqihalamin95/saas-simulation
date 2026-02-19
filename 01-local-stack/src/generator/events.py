@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import warnings
 from faker import Faker
 from .config import COUNTRIES, COUNTRY_TIMEZONE_MAP
 
@@ -19,17 +20,21 @@ def random_timestamp_in_month(month_start: pd.Timestamp) -> pd.Timestamp:
     return pd.to_datetime(random_ts, unit='s')
 
 def local_to_utc(local_ts: pd.Timestamp, timezone_str: str) -> pd.Timestamp:
-    """
-    Convert local timestamp to UTC, handling DST gaps and ambiguities.
-    """
     try:
         return local_ts.tz_localize(
-            timezone_str, 
-            nonexistent='shift_forward', # Fixes gaps caused by DST 'Spring Forward'
-            ambiguous='infer' # Fixes overlaps during DST 'Fall Back'
-        ).tz_convert("UTC").tz_localize(None) # Convert to UTC and remove offset info
-    except Exception:
-        # Emergency fallback if localization fails
+            timezone_str,
+            nonexistent='shift_forward',
+            ambiguous=False  # ← ganti dari 'infer' ke False
+            # False = asumsikan waktu SETELAH DST "fall back" (winter time)
+        ).tz_convert("UTC").tz_localize(None)
+    except Exception as e:
+        warnings.warn(
+            f"[local_to_utc] Failed to localize timestamp '{local_ts}' "
+            f"with timezone '{timezone_str}'. "
+            f"Falling back to UTC. Reason: {e}",
+            UserWarning,
+            stacklevel=2
+        )
         return local_ts.tz_localize("UTC").tz_localize(None)
         
 def assign_country_timezone():

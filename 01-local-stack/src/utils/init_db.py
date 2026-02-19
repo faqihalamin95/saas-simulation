@@ -5,6 +5,13 @@ SCHEMAS = ["raw"]
 
 def init_db():
     engine = get_engine()
+
+    # Safety confirmation before dropping schemas
+    confirm = input("⚠️  This will DROP all schemas. Type 'yes' to continue: ")
+    if confirm.lower() != "yes":
+        print("Aborted.")
+        return
+    
     print(" Resetting database schemas...")
 
     with engine.begin() as conn:
