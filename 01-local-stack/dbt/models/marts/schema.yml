@@ -1,0 +1,125 @@
+version: 2
+
+models:
+  - name: mart_cohort_retention
+    description: "Cohort retention analysis - tracks how many users remain subscribed over time by cohort"
+    columns:
+      - name: cohort_month
+        description: "Month when cohort started (first paid subscription)"
+        tests:
+          - not_null
+
+      - name: month_number
+        description: "Months since cohort start (0, 1, 2, ...)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: cohort_size
+        description: "Number of users in the cohort"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: retained_users
+        description: "Number of users still retained at this month_number"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: retention_rate
+        description: "Percentage of cohort retained (retained_users / cohort_size * 100)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 AND retention_rate <= 100"
+
+  - name: mart_mrr_movement
+    description: "Monthly Recurring Revenue (MRR) movement analysis - tracks new, expansion, contraction, and churned MRR"
+    columns:
+      - name: month
+        description: "Month in YYYY-MM format"
+        tests:
+          - unique
+          - not_null
+
+      - name: new_mrr
+        description: "MRR from new subscriptions (trial_convert, reactivate)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: expansion_mrr
+        description: "MRR gained from upgrades"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: contraction_mrr
+        description: "MRR lost from downgrades"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: churned_mrr
+        description: "MRR lost from cancellations"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: net_mrr
+        description: "Net MRR change (new + expansion - contraction - churned)"
+        tests:
+          - not_null
+
+      - name: mrr_growth_rate
+        description: "Month-over-month MRR growth rate (%)"
+
+  - name: mart_revenue_channel
+    description: "Revenue analysis by acquisition channel - identifies which channels drive the most revenue"
+    columns:
+      - name: month
+        description: "Month in YYYY-MM format"
+        tests:
+          - not_null
+
+      - name: acquisition_channel
+        description: "Channel where user was acquired"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['organic', 'paid_ads', 'referral', 'email_campaign']
+
+      - name: user_count
+        description: "Number of unique paying users from this channel in this month"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: total_revenue
+        description: "Total revenue from this channel in this month"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_revenue_per_user
+        description: "Average revenue per user (total_revenue / user_count)"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: pct_of_total_revenue
+        description: "Percentage of total revenue from this channel in this month"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 AND pct_of_total_revenue <= 100"

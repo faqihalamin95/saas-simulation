@@ -1,0 +1,18 @@
+# Raw/generated data
+data/
+*.parquet
+*.csv
+
+# Python cache
+*.pyc
+
+# Python virtual environment
+venv/
+.env/
+01-local-stack/.env/
+
+# dbt 
+01-local-stack/logs/
+01-local-stack/dbt/target/
+01-local-stack/dbt/dbt_packages/
+01-local-stack/dbt/logs/

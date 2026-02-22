@@ -1,0 +1,304 @@
+version: 2
+
+models:
+  - name: dim_users
+    description: "Dimension table for users"
+    columns:
+      - name: user_key
+        description: "Surrogate key for users"
+        tests:
+          - unique
+          - not_null
+
+      - name: user_id
+        description: "Unique user identifier"
+        tests:
+          - unique
+          - not_null
+
+      - name: name
+        description: "User's full name"
+        tests:
+          - not_null
+      
+      - name: email
+        description: "User email address"
+        tests:
+          - unique
+          - not_null
+
+      - name: country
+        description: "User's country of residence"
+        tests:
+          - not_null
+
+      - name: timezone
+        description: "User's timezone"
+        tests:
+          - not_null
+
+      - name: acquisition_channel
+        description: "Channel where user was acquired"
+        tests:
+          - accepted_values:
+              values: ['organic', 'paid_ads', 'referral', 'email_campaign']
+
+  - name: dim_date
+    description: "Date dimension table for time-based analysis"
+    columns:
+      - name: date_key
+        description: "Surrogate key for dates"
+        tests:
+          - unique
+          - not_null
+       
+      - name: full_date
+        description: "Full date in YYYY-MM-DD format"
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "full_date::date IS NOT NULL"
+
+      - name: day
+        description: "Day component of the date (1-31)"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "day >= 1 AND day <= 31"
+
+      - name: day_name
+        description: "Name of the day (e.g. Monday, Tuesday)"
+        tests:
+          - accepted_values:
+              values: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+      - name: is_weekend
+        description: "Flag indicating if the date falls on a weekend"
+        tests:
+          - accepted_values:
+              values: [True, False]
+
+      - name: month
+        description: "Month component of the date (1-12)"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "month >= 1 AND month <= 12"
+
+      - name: month_name
+        description: "Name of the month (e.g. January, February)"
+        tests:
+          - accepted_values:
+              values: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+      - name: year
+        description: "Year component of the date"
+        tests:
+          - not_null
+       
+      - name: quarter
+        description: "Quarter component of the date (Q1, Q2, Q3, Q4)"
+        tests:
+          - accepted_values:
+              values: ['Q1', 'Q2', 'Q3', 'Q4']
+
+  - name: dim_plans
+    description: "Dimension table for subscription plans"
+    columns:
+      - name: plan_key
+        description: "Surrogate key for subscription plans"
+        tests:
+          - unique
+          - not_null
+
+      - name: plan
+        description: "Subscription plan name"
+        tests:
+          - accepted_values:
+              values: ['Free', 'Pro', 'Pro Plus', 'Business']
+
+      - name: price_usd
+        description: "Price of the subscription plan in USD"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: fct_payments
+    description: "Fact table for payments"
+    columns:
+      - name: payment_key
+        description: "Surrogate key for payments"
+        tests:
+          - unique
+          - not_null
+
+      - name: user_key
+        description: "Foreign key to dim_users"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_key
+
+      - name: date_key
+        description: "Foreign key to dim_date for payment date"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: payment_id
+        description: "Unique identifier for the payment transaction"
+        tests:
+          - unique
+          - not_null
+
+      - name: amount_usd
+        description: "Amount paid in USD"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: status
+        description: "Status of the payment transaction"
+        tests:
+          - accepted_values:
+              values: ['success', 'failed']
+
+      - name: attempt_number
+        description: "Number of attempts for the payment transaction"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 1"
+
+      - name: payment_timestamp_local
+        description: "Local timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
+
+      - name: payment_timestamp_utc
+        description: "UTC timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
+
+  - name: fct_subscription_events
+    description: "Fact table for subscription events"
+    columns:
+      - name: subscription_event_key
+        description: "Surrogate key for subscription events"
+        tests:
+          - unique
+          - not_null
+
+      - name: user_key
+        description: "Foreign key to dim_users"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_key
+
+      - name: plan_key
+        description: "Foreign key to dim_plans (nullable for non-plan states such as expired/canceled)"
+        tests:
+          - relationships:
+              to: ref('dim_plans')
+              field: plan_key
+
+      - name: date_key
+        description: "Foreign key to dim_date for payment date"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: event_id
+        description: "Unique identifier for the subscription event"
+        tests:
+          - unique
+          - not_null
+
+      - name: event_type
+        description: "Type of subscription event"
+        tests:
+          - accepted_values:
+              values: ['trial_start', 'trial_convert', 'trial_expire', 'upgrade', 'downgrade', 'cancel', 'reactivate']
+
+      - name: event_timestamp_local
+        description: "Local timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
+
+      - name: event_timestamp_utc
+        description: "UTC timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
+
+  - name: fct_product_events
+    description: "Fact table for product events"
+    columns:
+      - name: product_event_key
+        description: "Surrogate key for product events"
+        tests:
+          - unique
+          - not_null
+
+      - name: user_key
+        description: "Foreign key to dim_users"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_users')
+              field: user_key
+
+      - name: plan_key
+        description: "Foreign key to dim_plans (nullable for non-plan states such as expired/canceled)"
+        tests:
+          - relationships:
+              to: ref('dim_plans')
+              field: plan_key
+
+      - name: date_key
+        description: "Foreign key to dim_date for payment date"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: event_id
+        description: "Unique identifier for the subscription event"
+        tests:
+          - unique
+          - not_null
+
+      - name: event_type
+        description: "Type of subscription event"
+        tests:
+          - accepted_values:
+              values: ['product_usage']
+
+      - name: event_timestamp_local
+        description: "Local timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
+
+      - name: event_timestamp_utc
+        description: "UTC timestamp of the payment event"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "::timestamp IS NOT NULL"
