@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw
+    database: DATA_PLATFORM
+    schema: RAW
+    tables:
+      - name: subscription_events
+      - name: payments
+      - name: product_events
+      - name: users

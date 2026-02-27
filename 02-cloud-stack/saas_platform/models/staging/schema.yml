@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_subscription_events
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        tests:
+          - not_null
+      - name: plan
+        tests:
+          - not_null  # detect null spike chaos M10
+
+  - name: stg_payments
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+      - name: amount_usd
+        tests:
+          - not_null  # detect unparseable amount chaos
+
+  - name: stg_product_events
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_users
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - unique
