@@ -49,4 +49,3 @@ final as (
 )
 
 select * from final
-order by price_usd

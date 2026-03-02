@@ -1,0 +1,135 @@
+version: 2
+
+models:
+  # ── DIMENSIONS ─────────────────────────────────────────
+
+  - name: dim_date
+    description: "Date dimension covering full range of Y2 data"
+    columns:
+      - name: date_key
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        tests:
+          - unique
+          - not_null
+      - name: batch_month
+        tests:
+          - not_null
+
+  - name: dim_plans
+    description: "SCD Type 2 plan dimension — tracks Y1 and Y2 plan history with pricing"
+    columns:
+      - name: plan_key
+        tests:
+          - unique
+          - not_null
+      - name: plan
+        tests:
+          - not_null
+      - name: price_usd
+        tests:
+          - not_null
+      - name: effective_from
+        tests:
+          - not_null
+      - name: effective_to
+        tests:
+          - not_null
+      - name: is_current
+        tests:
+          - not_null
+
+  - name: dim_users
+    description: "User dimension snapshot"
+    columns:
+      - name: user_key
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - unique
+          - not_null
+      - name: country
+        tests:
+          - not_null
+      - name: acquisition_channel
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['organic', 'paid_ads', 'referral', 'email_campaign', 'viral_share']
+
+  # ── FACTS ───────────────────────────────────────────────
+
+  - name: fct_payments
+    description: "Payment transactions — one row per payment attempt"
+    columns:
+      - name: payment_key
+        tests:
+          - unique
+          - not_null
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+      - name: user_key
+        tests:
+          - not_null
+      - name: date_key
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['success', 'failed']
+      - name: amount_usd
+        tests:
+          - not_null
+
+  - name: fct_product_events
+    description: "Product usage events — one row per usage event"
+    columns:
+      - name: product_event_key
+        tests:
+          - unique
+          - not_null
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: user_key
+        tests:
+          - not_null
+      - name: date_key
+        tests:
+          - not_null
+
+  - name: fct_subscription_events
+    description: "Subscription lifecycle events — one row per event"
+    columns:
+      - name: subscription_event_key
+        tests:
+          - unique
+          - not_null
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: user_key
+        tests:
+          - not_null
+      - name: date_key
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['trial_start', 'trial_convert', 'trial_expire', 'upgrade', 'downgrade', 'cancel', 'reactivate']

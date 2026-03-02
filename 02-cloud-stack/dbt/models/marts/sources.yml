@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: foundation
+    schema: foundation
+    tables:
+      - name: dim_date
+      - name: dim_plans
+      - name: dim_users
+      - name: fct_payments
+      - name: fct_product_events
+      - name: fct_subscription_events

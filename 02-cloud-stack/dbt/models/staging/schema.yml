@@ -10,7 +10,7 @@ models:
       - name: user_id
         tests:
           - not_null
-      - name: plan
+      - name: plan_raw
         tests:
           - not_null  # detect null spike chaos M10
 

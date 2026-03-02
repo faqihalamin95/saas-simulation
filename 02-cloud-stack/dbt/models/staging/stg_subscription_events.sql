@@ -24,7 +24,7 @@ renamed AS (
 
         -- standardize subscription status with messy data cleaning logic
         CASE
-            WHEN UPPER(TRIM(raw:plan::VARCHAR)) IN ('Expired', 'Canceled')
+            WHEN UPPER(TRIM(raw:plan::VARCHAR)) IN ('EXPIRED', 'CANCELED')
                 THEN 'Inactive'
             ELSE 'Active'
         END                                                                 AS subscription_status,

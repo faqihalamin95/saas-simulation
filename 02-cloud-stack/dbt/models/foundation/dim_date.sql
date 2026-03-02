@@ -36,13 +36,14 @@ date_spine as (
 
 final as (
     select
-        to_number(to_char(date_day, 'YYYYMMDD'))            as date_key,
+        to_number(to_varchar(date_day, 'YYYYMMDD'))         as date_key,
         date_day                                            as full_date,
         dayofmonth(date_day)                                as day,
         dayname(date_day)                                   as day_name,
         month(date_day)                                     as month,
         monthname(date_day)                                 as month_name,
         year(date_day)                                      as year,
+        to_varchar(date_day, 'YYYY-MM')                     as batch_month,
         'Q' || quarter(date_day)                            as quarter,
         iff(dayofweek(date_day) in (0, 6), true, false)     as is_weekend
     from date_spine
