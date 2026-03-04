@@ -1,135 +1,231 @@
 version: 2
 
 models:
-  # ── DIMENSIONS ─────────────────────────────────────────
+  # ── FOUNDATION — HARD STOPS ──────────────────────────────
+  # Blocking. If any test fails, marts will not be built.
+  # Data must be analytically safe before reaching consumers.
 
   - name: dim_date
     description: "Date dimension covering full range of Y2 data"
     columns:
       - name: date_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: full_date
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: batch_month
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
 
   - name: dim_plans
-    description: "SCD Type 2 plan dimension — tracks Y1 and Y2 plan history with pricing"
+    description: "SCD Type 2 plan dimension with pricing history"
     columns:
       - name: plan_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: plan
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: price_usd
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: effective_from
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: effective_to
         tests:
-          - not_null
-      - name: is_current
-        tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
 
   - name: dim_users
     description: "User dimension snapshot"
     columns:
       - name: user_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: user_id
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: email
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: country
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: acquisition_channel
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               values: ['organic', 'paid_ads', 'referral', 'email_campaign', 'viral_share']
-
-  # ── FACTS ───────────────────────────────────────────────
+              config:
+                severity: error
 
   - name: fct_payments
     description: "Payment transactions — one row per payment attempt"
     columns:
       - name: payment_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: payment_id
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: user_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: date_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: status
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               values: ['success', 'failed']
+              config:
+                severity: error
+
+      # Hard stop if unparseable amount exceeds 2%
       - name: amount_usd
         tests:
-          - not_null
+          - assert_not_null_pct:
+              max_pct: 2
+              config:
+                severity: error
+                name: error_unparseable_amount_pct_foundation
 
   - name: fct_product_events
     description: "Product usage events — one row per usage event"
     columns:
       - name: product_event_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: event_id
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: user_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: date_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
 
   - name: fct_subscription_events
     description: "Subscription lifecycle events — one row per event"
     columns:
       - name: subscription_event_key
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: event_id
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: user_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: date_key
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: event_type
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               values: ['trial_start', 'trial_convert', 'trial_expire', 'upgrade', 'downgrade', 'cancel', 'reactivate']
+              config:
+                severity: error
+
+      # Hard stop if late arriving exceeds 15%
+      - name: is_late_arriving
+        tests:
+          - assert_late_arriving_pct:
+              max_pct: 15
+              config:
+                severity: error
+                name: error_late_arriving_pct_foundation

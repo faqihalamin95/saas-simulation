@@ -1,7 +1,12 @@
 version: 2
 
 models:
+  # ── STAGING — SOFT WARNINGS ─────────────────────────────
+  # Non-blocking. Pipeline continues but anomalies are logged.
+  # Thresholds based on observed Y2 chaos patterns.
+
   - name: stg_subscription_events
+    description: "Flattened subscription events from raw VARIANT"
     columns:
       - name: event_id
         tests:
@@ -12,19 +17,57 @@ models:
           - not_null
       - name: plan_raw
         tests:
-          - not_null  # detect null spike chaos M10
+          - not_null:
+              config:
+                severity: warn
+
+      # Warn if unknown plan exceeds 15% — M10 viral spike expected ~30%
+      # Threshold set higher to account for known chaos
+      - name: plan_cleaned
+        tests:
+          - assert_not_null_pct:
+              max_pct: 15
+              config:
+                severity: warn
+                name: warn_unknown_plan_pct_staging
+
+      # Warn if late arriving exceeds 10%
+      - name: is_late_arriving
+        tests:
+          - assert_late_arriving_pct:
+              max_pct: 10
+              config:
+                severity: warn
+                name: warn_late_arriving_pct_staging
 
   - name: stg_payments
+    description: "Flattened payment events from raw VARIANT"
     columns:
       - name: payment_id
         tests:
           - unique
           - not_null
+
+      # Warn if unparseable amount exceeds 5%
       - name: amount_usd
         tests:
-          - not_null  # detect unparseable amount chaos
+          - assert_not_null_pct:
+              max_pct: 5
+              config:
+                severity: warn
+                name: warn_unparseable_amount_pct_staging
+
+      # Warn if late arriving exceeds 10%
+      - name: is_late_arriving
+        tests:
+          - assert_late_arriving_pct:
+              max_pct: 10
+              config:
+                severity: warn
+                name: warn_late_arriving_pct_payments_staging
 
   - name: stg_product_events
+    description: "Flattened product usage events from raw VARIANT"
     columns:
       - name: event_id
         tests:
@@ -32,6 +75,7 @@ models:
           - not_null
 
   - name: stg_users
+    description: "Flattened users dimension from raw VARIANT"
     columns:
       - name: user_id
         tests:

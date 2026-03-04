@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: mart_mrr
+    description: "Monthly Recurring Revenue breakdown — new, expansion, contraction, churn, net"
+    columns:
+      - name: batch_month
+        tests:
+          - unique
+          - not_null
+
+  - name: mart_cohort_retention
+    description: "Cohort retention by month — tracks user retention from trial_convert"
+    columns:
+      - name: cohort_month
+        tests:
+          - not_null
+      - name: period_number
+        tests:
+          - not_null
+      - name: cohort_size
+        tests:
+          - not_null
+      - name: retained_users
+        tests:
+          - not_null
+      - name: retention_rate
+        tests:
+          - not_null
+
+  - name: mart_customer_ltv
+    description: "Customer lifetime value — grain per user"
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null
+      - name: cohort_month
+        tests:
+          - not_null
+
+  - name: mart_data_quality
+    description: "Pipeline observability — anomaly signals per batch_month"
+    columns:
+      - name: batch_month
+        tests:
+          - unique
+          - not_null
