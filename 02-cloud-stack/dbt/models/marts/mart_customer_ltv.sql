@@ -3,7 +3,7 @@ with cohort_month as (
         user_key,
         plan_key,
         date_trunc('month', event_timestamp_utc)::date      as cohort_month
-    from data_platform.foundation.fct_subscription_events
+    from {{ ref('fct_subscription_events') }}
     where event_type = 'trial_convert'
 ),
 
@@ -13,14 +13,14 @@ first_plan as (
         c.plan_key,
         p.plan          as first_plan
     from cohort_month c
-    left join data_platform.foundation.dim_plans p on c.plan_key = p.plan_key
+    left join {{ ref('dim_plans') }} p on c.plan_key = p.plan_key
 ),
 
 total_revenue as (
     select
         user_key,
         sum(amount_usd) as total_revenue
-    from data_platform.foundation.fct_payments
+    from {{ ref('fct_payments') }}
     where status = 'success'
     group by user_key
 ),
@@ -29,7 +29,7 @@ total_month_active as (
     select
         user_key,
         count(distinct date_trunc('month', payment_timestamp_utc)) as total_month_active
-    from data_platform.foundation.fct_payments
+    from {{ ref('fct_payments') }}
     where status = 'success'
     group by user_key
 ),
@@ -53,7 +53,7 @@ subscription_status as (
             user_key,
             subscription_status,
             row_number() over (partition by user_key order by event_timestamp_utc desc) as rn
-        from data_platform.foundation.fct_subscription_events
+        from {{ ref('fct_subscription_events') }}
     ) t
     where rn = 1
 ),
@@ -70,7 +70,7 @@ final as (
         l.total_month_active,
         l.avg_monthly_ltv,
         s.subscription_status
-    from data_platform.foundation.dim_users u
+    from {{ ref('dim_users') }} u
     inner join cohort_month c           on u.user_key = c.user_key
     inner join first_plan f             on u.user_key = f.user_key
     inner join avg_monthly_ltv l        on u.user_key = l.user_key

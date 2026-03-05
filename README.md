@@ -184,7 +184,7 @@ Business validation precedes infrastructure scaling.
 
 ---
 
-📈 Core Business Question
+## 📈 Core Business Question
 
 **The entire pipeline exists to answer:**
 

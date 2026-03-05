@@ -6,7 +6,7 @@ with late_arriving_observe as (
         round(
             count(case when is_late_arriving = true then 1 end) / 
             count(*) * 100, 2)                                      as late_arriving_pct
-    from data_platform.staging.stg_subscription_events
+    from {{ ref('stg_subscription_events') }}
     group by batch_month
 ),
 
@@ -18,7 +18,7 @@ unknown_plan_observe as (
         round(
             count(case when plan_cleaned = 'Unknown' then 1 end) / 
             count (plan_cleaned) * 100, 2 )                         as null_plan_pct
-    from data_platform.staging.stg_subscription_events
+    from {{ ref('stg_subscription_events') }}
     group by batch_month 
 ),
 
@@ -27,7 +27,7 @@ users_observe as (
         batch_month,
         count(case when event_type = 'trial_start' then 1 end)                  as new_user_count,
         count(case when event_type in ('trial_expire', 'cancel') then 1 end)    as churned_users_count
-    from data_platform.staging.stg_subscription_events
+    from {{ ref('stg_subscription_events') }}
     group by batch_month
 ),
 
@@ -40,7 +40,7 @@ payments_observe as (
             count(case when status = 'failed' then 1 end) / 
             count(*) * 100, 2) as failed_payment_pct,
         sum(case when status = 'success' then amount_usd end)   as total_monthly_revenue
-    from data_platform.staging.stg_payments
+    from {{ ref('stg_payments') }}
     group by batch_month
 ),
 

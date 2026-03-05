@@ -2,7 +2,7 @@ with cohort as (
     select
         user_key,
         date_trunc('month', event_timestamp_utc)::date      as cohort_month
-    from data_platform.foundation.fct_subscription_events
+    from {{ ref('fct_subscription_events') }}
     where event_type = 'trial_convert'
 ),
 
@@ -10,7 +10,7 @@ activity as (
     select 
         user_key,
         date_trunc('month', payment_timestamp_utc)::date    as activity_month
-    from data_platform.foundation.fct_payments
+    from {{ ref('fct_payments') }}
     where status = 'success'
     group by user_key, activity_month
 ),

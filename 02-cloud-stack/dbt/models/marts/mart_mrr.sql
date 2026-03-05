@@ -3,9 +3,9 @@ with new_mrr as (
         count(distinct se.user_key)     as new_mrr_users,
         sum(p.price_usd)                as new_mrr_payment,
         d.batch_month
-    from data_platform.foundation.fct_subscription_events se
-    left join data_platform.foundation.dim_date d   on se.date_key = d.date_key
-    left join data_platform.foundation.dim_plans p  on se.plan_key = p.plan_key
+    from {{ ref('fct_subscription_events') }} se
+    left join {{ ref('dim_date') }} d   on se.date_key = d.date_key
+    left join {{ ref('dim_plans') }} p  on se.plan_key = p.plan_key 
     where se.event_type in ('trial_convert', 'reactivate')
     group by batch_month
 ),
@@ -16,9 +16,9 @@ prev_price_expansion as (
         lag(p.price_usd) over (partition by se.user_key order by d.full_date)   as prev_price,
         p.price_usd                                                             as current_price,
         d.batch_month
-    from data_platform.foundation.fct_subscription_events se
-    left join data_platform.foundation.dim_date d   on se.date_key = d.date_key
-    left join data_platform.foundation.dim_plans p  on se.plan_key = p.plan_key
+    from {{ ref('fct_subscription_events') }} se
+    left join {{ ref('dim_date') }} d   on se.date_key = d.date_key
+    left join {{ ref('dim_plans') }} p  on se.plan_key = p.plan_key
     where se.event_type in ('upgrade')
 ),
 
@@ -37,9 +37,9 @@ prev_price_contraction as (
         lag(p.price_usd) over (partition by se.user_key order by d.full_date)   as prev_price,
         p.price_usd                                                             as current_price,
         d.batch_month
-    from data_platform.foundation.fct_subscription_events se
-    left join data_platform.foundation.dim_date d   on se.date_key = d.date_key
-    left join data_platform.foundation.dim_plans p  on se.plan_key = p.plan_key
+    from {{ ref('fct_subscription_events') }} se
+    left join {{ ref('dim_date') }} d   on se.date_key = d.date_key
+    left join {{ ref('dim_plans') }} p  on se.plan_key = p.plan_key
     where se.event_type in ('downgrade')
 ),
 
@@ -57,9 +57,9 @@ churn_mrr as (
         count(distinct se.user_key)     as churn_mrr_users,
         sum(p.price_usd)                as churn_mrr_payment,
         d.batch_month
-    from data_platform.foundation.fct_subscription_events se
-    left join data_platform.foundation.dim_date d   on se.date_key = d.date_key
-    left join data_platform.foundation.dim_plans p  on se.plan_key = p.plan_key
+    from {{ ref('fct_subscription_events') }} se
+    left join {{ ref('dim_date') }} d   on se.date_key = d.date_key
+    left join {{ ref('dim_plans') }} p  on se.plan_key = p.plan_key
     where se.event_type in ('cancel')
     group by batch_month
 ),
