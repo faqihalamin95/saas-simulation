@@ -19,6 +19,29 @@ This project demonstrates:
 
 ---
 
+## ⚠️ Chaos Engineering (Data Quality Simulation)
+
+**This project intentionally injects data quality issues to simulate real-world instability.**
+
+### Scenario:
+- Late-arriving events
+- Schema evolution, because new columns added mid-year	
+- Duplicate payments	
+- Type drift: Numeric → String	
+- Plan rename, from business rebrand
+- Null spike	
+
+Not all issues are "fixed".
+
+Some are:
+- documented
+- tracked
+- made observable
+
+The goal is pipeline resilience.
+
+---
+
 ## 🧱 Data Architecture (Common Pattern)
 
 All phases follow the same layered pattern:
@@ -65,22 +88,6 @@ This phase scales the architecture to a cloud-like setup after metric and model 
 
 📘 Setup and runbook:
 - [`02-cloud-stack/README.md`](02-cloud-stack/README.md)
-
----
-
-### Phase 3 — Analytics Consumption & Decision Layer (Project Direction)
-
-Phase 3 is the forward direction of this project: turning mart outputs into a business decision consumption layer.
-
-Target scope for Phase 3:
-
-- consistent semantic/business metric layer across stakeholders,
-- dashboards and monitoring for core KPIs (MRR movement, retention, LTV, data quality),
-- threshold-based business alerting,
-- lightweight governance for metric definitions and quality SLAs,
-- readiness for CI/CD analytics workflows.
-
-> Note: The repository currently provides implemented foundations for Phases 1 and 2. Phase 3 is the natural continuation on top of existing marts.
 
 ---
 
