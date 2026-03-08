@@ -50,7 +50,9 @@ engineering pipelines.
 
 ### 1️⃣ Data Generator
 
-Location: src/generator/runner_y2.py
+Location: 
+
+    src/generator/runner_y2.py
 
 This generator simulates SaaS operational activity including:
 
@@ -59,21 +61,26 @@ This generator simulates SaaS operational activity including:
 -   product interaction events
 -   user records
 
-The generator can optionally **carry over users from the Year 1
-dataset** to simulate a continuous SaaS lifecycle.
+The generator can optionally **carry over users from the Year 1 dataset** to simulate a continuous SaaS lifecycle.
 
-Output files are written as **Parquet datasets** to: data/raw_y2/
+Output files are written as **Parquet datasets** to: 
+
+    data/raw_y2/
 
 ------------------------------------------------------------------------
 
 ### 2️⃣ Object Storage Upload (Cloudflare R2)
 
-Location: src/utils/upload_to_r2.py
+Location: 
+
+    src/utils/upload_to_r2.py
 
 Responsibilities:
 
 -   Upload all generated Parquet files to **Cloudflare R2**
--   Store data using the prefix: y2/
+-   Store data using the prefix: 
+
+        y2/
 
 R2 serves as the **cloud object storage layer** for ingestion into
 Snowflake.
@@ -82,7 +89,9 @@ Snowflake.
 
 ### 3️⃣ Cloud-to-Cloud Ingestion (Snowflake)
 
-Location: src/ingestion/ingest_r2.py
+Location: 
+
+    src/ingestion/ingest_r2.py
 
 This ingestion step loads data from **R2 object storage** into the
 **Snowflake RAW schema**.
@@ -105,15 +114,17 @@ These fields allow traceability of ingestion batches.
 
 ### 4️⃣ Analytics Transformation (dbt)
 
-Location: dbt/
+Location: 
+
+    dbt/
 
 Data transformations follow a **layered analytics architecture**:
 
-  Layer        Purpose
-  ------------ ---------------------------------------------------
-  staging      Data type normalization and field standardization
-  foundation   Core fact and dimension models
-  marts        Business-level analytical models
+ | Layer       | Purpose |
+ | ------------ | --------------------------------------------------- |
+ | staging     | Data type normalization and field standardization |
+ | foundation  | Core fact and dimension models |
+ | marts       | Business-level analytical models |
 
 dbt manages model dependencies, execution order, and data tests.
 
@@ -121,7 +132,9 @@ dbt manages model dependencies, execution order, and data tests.
 
 ### 5️⃣ Orchestration (Apache Airflow)
 
-Location: airflow/
+Location: 
+
+    airflow/
 
 The pipeline can be scheduled and monitored using **Apache Airflow**
 running in Docker.
@@ -144,7 +157,7 @@ The structure remains consistent with the local stack to maintain
 **metric comparability between Year 1 and Year 2**, while adding extra
 fields for monitoring and data quality.
 
-```
+```text
                  dim_date
                    |
                    |
@@ -303,8 +316,7 @@ Attributes:
     └── dags/
 ```
 
-This structure separates responsibilities between **data generation,
-ingestion, transformation, and orchestration**.
+This structure separates responsibilities between **data generation, ingestion, transformation, and orchestration**.
 
 ------------------------------------------------------------------------
 
@@ -329,7 +341,9 @@ pip install -r requirements.txt
 Note:
 
 Additional dependencies (including dbt adapters) are installed inside
-the **Airflow Docker image** defined in: 02-cloud-stack/airflow/Dockerfile
+the **Airflow Docker image** defined in: 
+
+    02-cloud-stack/airflow/Dockerfile
 
 ------------------------------------------------------------------------
 
@@ -378,14 +392,16 @@ AIRFLOW_ADMIN_PASSWORD=admin
 Before running ingestion, ensure the following objects exist in
 Snowflake:
 
-  Object           Name
-  ---------------- -----------------
-  Database         `DATA_PLATFORM`
-  Schema           `RAW`
-  File Format      `fmt_parquet`
-  External Stage   `stg_r2_y2`
+ | Object          | Name |
+ | ---------------- | ----------------- |
+ | Database        | `DATA_PLATFORM` |
+ | Schema          | `RAW` |
+ | File Format     | `fmt_parquet` |
+ | External Stage  | `stg_r2_y2` |
 
-The stage should point to the R2 bucket prefix: y2/
+The stage should point to the R2 bucket prefix: 
+
+    y2/
 
 The ingestion script uses the following constants:
 
@@ -403,7 +419,7 @@ Navigate to the cloud stack directory:
 cd 02-cloud-stack
 ```
 
-### Step 1 --- Generate Year 2 Data
+### Step 1 - Generate Year 2 Data
 
 ``` bash
 python -m src.generator.runner_y2
@@ -415,22 +431,26 @@ Run without user carry-over:
 python -m src.generator.runner_y2 --no-carry-over
 ```
 
-Generated files are written to: data/raw_y2/
+Generated files are written to: 
+
+    data/raw_y2/
 
 ------------------------------------------------------------------------
 
-### Step 2 --- Upload Data to R2
+### Step 2 - Upload Data to R2
 
 ``` bash
 python -m src.utils.upload_to_r2
 ```
 
 This uploads all `.parquet` files from `data/raw_y2` to the R2 bucket
-using the prefix: y2/
+using the prefix: 
+
+    y2/
 
 ------------------------------------------------------------------------
 
-### Step 3 --- Ingest Data into Snowflake
+### Step 3 - Ingest Data into Snowflake
 
 ``` bash
 python -m src.ingestion.ingest_r2
@@ -441,7 +461,7 @@ schema.
 
 ------------------------------------------------------------------------
 
-### Step 4 --- Run dbt Transformations
+### Step 4 - Run dbt Transformations
 
 ``` bash
 cd dbt
@@ -492,7 +512,9 @@ Airflow UI will be available at:
 
 ## 📊 Main Airflow DAG
 
-DAG Name: saas_platform_pipeline
+DAG Name: 
+
+    saas_platform_pipeline
 
 Pipeline tasks execute in the following order:
 
@@ -529,5 +551,4 @@ This cloud pipeline prioritizes:
 -   observable ingestion processes
 -   reproducible analytics workflows
 
-The architecture reflects patterns commonly used in **modern analytics
-engineering platforms**.
+The architecture reflects patterns commonly used in **modern analytics engineering platforms**.

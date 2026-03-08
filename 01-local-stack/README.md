@@ -10,8 +10,7 @@ The pipeline demonstrates how raw event data can be generated, ingested
 into a relational database, and transformed into analytics-ready models
 using **dbt**.
 
-The primary objective of this stack is to showcase **core data
-engineering workflows**, including:
+The primary objective of this stack is to showcase **core data engineering workflows**, including:
 
 -   synthetic SaaS event data generation
 -   raw data ingestion into PostgreSQL
@@ -26,6 +25,7 @@ used during early development before moving to cloud infrastructure.
 
 ## 🧱 Architecture Overview
 
+```text
     Synthetic Data Generator (Python)
             ↓
     Parquet Files (data/raw)
@@ -38,6 +38,7 @@ used during early development before moving to cloud infrastructure.
         ├─ Staging
         ├─ Foundation
         └─ Marts
+```
 
 Each stage has a clear responsibility and can be executed independently
 using a `Makefile`.
@@ -46,13 +47,14 @@ using a `Makefile`.
 
 ## 📊 Data Model (Star Schema)
 
-The analytics layer in the **foundation** models follows a **star schema
-design**.\
+The analytics layer in the **foundation** models follows a **star schema design**.
+
 This structure simplifies analytical queries and supports dimensional
 analysis across SaaS events.
 
-The schema contains **three dimension tables** and **three fact
-tables**.
+The schema contains **three dimension tables** and **three fact tables**.
+
+```text
 
                      dim_date
                         |
@@ -69,8 +71,8 @@ tables**.
                         |
                      dim_date
 
-This design enables flexible analysis across **users, time, and
-subscription plans**.
+```
+This design enables flexible analysis across **users, time, and subscription plans**.
 
 ------------------------------------------------------------------------
 
@@ -138,8 +140,6 @@ This table stores simple **historical plan changes**, similar to a
 
 Each fact table has a clearly defined **grain** to avoid ambiguity in
 analytics.
-
-------------------------------------------------------------------------
 
 ### fct_payments
 
@@ -221,7 +221,9 @@ This table captures product interactions such as:
 
 ### 1️⃣ Data Generator
 
-Location: src/generator/
+Location: 
+
+    src/generator/
 
 Simulates SaaS business activity including:
 
@@ -229,13 +231,17 @@ Simulates SaaS business activity including:
 -   subscription and payment activity
 -   product and plan usage
 
-Generated datasets are stored as **Parquet files** in: data/raw/
+Generated datasets are stored as **Parquet files** in: 
+
+    data/raw/
 
 ------------------------------------------------------------------------
 
 ### 2️⃣ Data Ingestion
 
-Location: src/ingestion/ingest.py
+Location: 
+
+    src/ingestion/ingest.py
 
 Responsibilities:
 
@@ -253,7 +259,9 @@ Technology used:
 
 ### 3️⃣ Database Initialization
 
-Location: src/utils/init_db.py
+Location: 
+
+    src/utils/init_db.py
 
 Purpose:
 
@@ -266,7 +274,9 @@ This step **drops and recreates the `raw` schema** before loading data.
 
 ### 4️⃣ Analytics Transformation (dbt)
 
-Location: dbt/
+Location: 
+
+    dbt/
 
 The transformation layer follows a **layered analytics architecture**:
 
@@ -280,6 +290,7 @@ dbt manages SQL transformations, dependencies, and testing.
 
 ## 📂 Project Structure
 
+```text
     01-local-stack/
     │
     ├── Makefile
@@ -301,7 +312,7 @@ dbt manages SQL transformations, dependencies, and testing.
             ├── staging/
             ├── foundation/
             └── marts/
-
+```
 ------------------------------------------------------------------------
 
 ## ⚙️ Environment Requirements
@@ -327,7 +338,9 @@ manually.
 
 ## 🔐 Environment Configuration
 
-Database connections are configured using environment variables read by: src/utils/db.py
+Database connections are configured using environment variables read by: 
+
+    src/utils/db.py
 
 Example `.env` file:
 
@@ -341,7 +354,9 @@ Example `.env` file:
 
 ## ▶️ Running the Local Pipeline
 
-Navigate to the project: cd 01-local-stack
+Navigate to the project: 
+
+    cd 01-local-stack
 
 ### Run the Full Pipeline
 
@@ -371,7 +386,9 @@ This runs:
 
 ## 🔄 Running dbt Transformations
 
-Navigate to the dbt project: cd 01-local-stack/dbt
+Navigate to the dbt project: 
+
+    cd 01-local-stack/dbt
 
 Run:
 
@@ -381,11 +398,11 @@ Run:
 
 Model layers:
 
-  Layer        Purpose
-  ------------ ----------------------------------
-  staging      Standardizes raw data
-  foundation   Builds fact and dimension tables
-  marts        Produces business metrics
+  | Layer |Purpose |
+  | ------------ | ---------------------------------- |
+  | staging      | Standardizes raw data | 
+  | foundation   | Builds fact and dimension tables |
+  | marts        | Produces business metrics |
 
 Examples of analytics outputs:
 
