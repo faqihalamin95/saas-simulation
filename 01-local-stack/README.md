@@ -375,12 +375,12 @@ This runs:
     make ingest
     make test
 
-  Command         Description
-  --------------- ------------------------------------
-  make generate   Generate synthetic SaaS data
-  make init       Reset raw database schema
-  make ingest     Load Parquet files into PostgreSQL
-  make test       Run validation checks
+ | Command        | Description |
+ | --------------- | ------------------------------------ |
+ | make generate  | Generate synthetic SaaS data |
+ | make init      | Reset raw database schema |
+ | make ingest    | Load Parquet files into PostgreSQL |
+ | make test      | Run validation checks |
 
 ------------------------------------------------------------------------
 
